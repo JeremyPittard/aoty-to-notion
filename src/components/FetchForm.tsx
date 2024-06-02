@@ -3,9 +3,14 @@ import { getAlbums } from "../services/spotify";
 import type { Album, Albums } from "@spotify/web-api-ts-sdk";
 
 const FetchForm = () => {
+  const [albumTitle, setAlbumTitle] = useState<string>("");
+  const [albums, setAlbums] = useState<any>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const handleSubmit = async (event: FormEvent) => {
     event?.preventDefault();
+    setAlbums(null);
     const albums = await getAlbums(albumTitle);
+    setIsLoading(true);
 
     const sortedAlbums = albums.sort((a, b) => {
       if (a.name === albumTitle) {
@@ -18,13 +23,11 @@ const FetchForm = () => {
     });
 
     setAlbums(sortedAlbums);
+    setIsLoading(false);
   };
 
-  const [albumTitle, setAlbumTitle] = useState<string>("");
-  const [albums, setAlbums] = useState<any>();
-
   return (
-    <>
+    <section className="max-w-2xl mx-auto">
       <h1>AOTY</h1>
       <label>
         <input
@@ -36,16 +39,31 @@ const FetchForm = () => {
       <button type="button" onClick={handleSubmit}>
         Go!
       </button>
-      <ul>
-        {albums?.map((album: Album) => (
-          <li key={album.id}>
-            <button onClick={() => console.log(album)}>
-              {album.artists[0].name} - {album.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
+      {isLoading ? <h2>doing the thing</h2> : null}
+      {albums?.map((album: Album) => (
+        <details key={album.id}>
+          <summary>{`${album.artists[0].name} - ${album.name}`}</summary>
+          <table>
+            <tr>
+              <td>Artist:</td>
+              <td>{album.artists.map((artist) => artist.name)}</td>
+            </tr>
+            <tr>
+              <td>Album:</td>
+              <td>{album.name}</td>
+            </tr>
+            <tr>
+              <td>Image Url:</td>
+              <td>{album.images[0].url}</td>
+            </tr>
+            <tr>
+              <td>Embed:</td>
+              <td>{album.external_urls.spotify}</td>
+            </tr>
+          </table>
+        </details>
+      ))}
+    </section>
   );
 };
 
