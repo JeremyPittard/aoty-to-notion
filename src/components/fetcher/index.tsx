@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { getAlbums } from "../services/spotify";
-import type { Album, Albums } from "@spotify/web-api-ts-sdk";
+import { getAlbums } from "../../services/spotify";
+import AlbumCard from "../album-card";
+import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 
 const FetchForm = () => {
   const [albumTitle, setAlbumTitle] = useState<string>("");
-  const [albums, setAlbums] = useState<any>();
+  const [albums, setAlbums] = useState<SimplifiedAlbum[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const handleSubmit = async (event: FormEvent) => {
     event?.preventDefault();
@@ -23,6 +24,7 @@ const FetchForm = () => {
     });
 
     setAlbums(sortedAlbums);
+    console.log(sortedAlbums);
     setIsLoading(false);
   };
 
@@ -39,30 +41,12 @@ const FetchForm = () => {
       <button type="button" onClick={handleSubmit}>
         Go!
       </button>
-      {isLoading ? <h2>doing the thing</h2> : null}
-      {albums?.map((album: Album) => (
-        <details key={album.id}>
-          <summary>{`${album.artists[0].name} - ${album.name}`}</summary>
-          <table>
-            <tr>
-              <td>Artist:</td>
-              <td>{album.artists.map((artist) => artist.name)}</td>
-            </tr>
-            <tr>
-              <td>Album:</td>
-              <td>{album.name}</td>
-            </tr>
-            <tr>
-              <td>Image Url:</td>
-              <td>{album.images[0].url}</td>
-            </tr>
-            <tr>
-              <td>Embed:</td>
-              <td>{album.external_urls.spotify}</td>
-            </tr>
-          </table>
-        </details>
-      ))}
+      <div className="flex flex-col gap-4">
+        {isLoading ? <h2>doing the thing</h2> : null}
+        {albums?.map((album: SimplifiedAlbum) => (
+          <AlbumCard album={album} />
+        ))}
+      </div>
     </section>
   );
 };

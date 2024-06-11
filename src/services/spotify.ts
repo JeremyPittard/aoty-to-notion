@@ -1,4 +1,4 @@
-import { SpotifyApi } from "@spotify/web-api-ts-sdk";
+import { SpotifyApi, type SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 
 type albumTitle = string;
 
@@ -8,6 +8,8 @@ const spotify = SpotifyApi.withClientCredentials(
 );
 
 export const getAlbums = async (albumTitle: albumTitle) => {
-  const albums = (await spotify.search(albumTitle, ["album"])).albums.items;
+  const albums: SimplifiedAlbum[] = (
+    await spotify.search(albumTitle, ["album"])
+  ).albums.items;
   return albums;
 };
