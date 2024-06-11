@@ -29,22 +29,26 @@ const FetchForm = () => {
   };
 
   return (
-    <section className="max-w-2xl mx-auto">
-      <h1>AOTY</h1>
-      <label>
-        <input
-          type="text"
-          name="name"
-          onChange={(e) => setAlbumTitle(e.target.value)}
-        />
-      </label>
-      <button type="button" onClick={handleSubmit}>
-        Go!
-      </button>
+    <section className="max-w-lg mx-auto">
+      <div className="p-4">
+        <div className="flex flex-col">
+          <label htmlFor="name">Enter an album title:</label>
+          <input
+            type="text"
+            name="name"
+            id="name"
+            onChange={(e) => setAlbumTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit}
+          />
+          <button type="button" onClick={handleSubmit}>
+            Go!
+          </button>
+        </div>
+      </div>
       <div className="flex flex-col gap-4">
         {isLoading ? <h2>doing the thing</h2> : null}
         {albums?.map((album: SimplifiedAlbum) => (
-          <AlbumCard album={album} />
+          <AlbumCard album={album} key={album.id} />
         ))}
       </div>
     </section>

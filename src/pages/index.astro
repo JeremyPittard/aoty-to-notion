@@ -8,3 +8,14 @@ import Layout from "../layouts/Layout.astro";
     <FetchForm client:only="react" />
   </main>
 </Layout>
+<style is:global>
+  td {
+    max-width: 200px;
+
+    p {
+      max-width: 200px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+  }
+</style>
