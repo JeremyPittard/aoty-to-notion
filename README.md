@@ -29,7 +29,8 @@ Eventually this will have a button to hit send and it will post straight to noti
 ## Todo
 
 - [ ] Proper Design
-- [ ] present album details with copy buttons for each piece of info
+- [x] present album details with copy buttons for each piece of info
 - [ ] hook it up to send straight to notion
-      \
-      [![Built with Astro](https://astro.badg.es/v2/built-with-astro/medium.svg)](https://astro.build)
+- [ ] optimisations (low priority due to only needing to run locally)
+
+[![Built with Astro](https://astro.badg.es/v2/built-with-astro/medium.svg)](https://astro.build)
