@@ -25,6 +25,7 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
         width={144}
         onClick={() => copyContent(album.images[0].url)}
         className="cursor-pointer self-start"
+        loading="lazy"
       />
       <div className="details px-2 pb-2">
         <h2 className="font-bold flex items-center">
