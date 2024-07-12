@@ -9,7 +9,7 @@ const spotify = SpotifyApi.withClientCredentials(
 
 export const getAlbums = async (albumTitle: albumTitle) => {
   const albums: SimplifiedAlbum[] = (
-    await spotify.search(albumTitle, ["album"])
+    await spotify.search(albumTitle, ["album"], 'AU', 50)
   ).albums.items;
   return albums;
 };
