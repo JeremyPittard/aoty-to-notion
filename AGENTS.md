@@ -47,13 +47,8 @@ There are no explicit linting/formatting scripts configured. However, you should
 
 Currently, there are no automated tests configured. To test changes:
 
-1. Run `pnpm dev` to start the development server
-2. Open the app in a browser (typically at `http://localhost:4321`)
-3. Test functionality manually:
-   - Search for albums
-   - Verify search results are displayed
-   - Test copy-paste functionality
-   - Check loading states
+1. DO NOT start a server.
+2. Ask the user to verify
 
 ## Code Structure
 
@@ -65,7 +60,7 @@ src/
 │   └── album-card/     # Album details card
 │       └── index.tsx
 ├── services/           # API service layer
-│   └── spotify.ts      # Spotify API integration
+│   └── discogs.ts      # Discogs API integration
 ├── pages/              # Astro pages
 │   └── index.astro     # Main entry point
 ├── layouts/            # Astro layouts
@@ -102,24 +97,28 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 ### Naming Conventions
 
 1. **Variables/Properties**: camelCase
+
    ```typescript
-   const albumTitle = "..."
-   const isLoading = false
+   const albumTitle = "...";
+   const isLoading = false;
    ```
 
 2. **Functions/Methods**: camelCase
+
    ```typescript
    const getAlbums = async () => { ... }
    const copyContent = async () => { ... }
    ```
 
 3. **Components**: PascalCase (both file/folder names and component names)
+
    ```typescript
    // File: src/components/album-card/index.tsx
    const AlbumCard = () => { ... }
    ```
 
 4. **Types/Interfaces**: PascalCase, with optional `I` prefix for interfaces (or `type` for type aliases)
+
    ```typescript
    type AlbumCardProps = { ... }
    type albumTitle = string
@@ -134,11 +133,13 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 
 1. **Use TypeScript for all files**: `.ts` for services, `.tsx` for React components, `.astro` for Astro files
 2. **Type all function parameters and return types**:
+
    ```typescript
    export const getAlbums = async (albumTitle: albumTitle): Promise<SimplifiedAlbum[]> => { ... }
    ```
 
 3. **Type component props explicitly**:
+
    ```typescript
    type AlbumCardProps = {
      album: SimplifiedAlbum;
@@ -155,6 +156,7 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 ### Error Handling
 
 1. **Use try-catch blocks for async operations**:
+
    ```typescript
    try {
      await navigator.clipboard.writeText(string);
@@ -171,6 +173,7 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 ### React Component Style
 
 1. **Use function components with hooks**:
+
    ```typescript
    import { useState } from "react";
 
@@ -181,30 +184,36 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
    ```
 
 2. **Event handlers**: camelCase, with `handle` prefix
+
    ```typescript
    const handleSubmit = async (event: FormEvent) => { ... }
    ```
 
 3. **Destructure props**:
+
    ```typescript
    const AlbumCard = ({ album }: AlbumCardProps) => { ... }
    ```
 
 4. **Key prop in lists**: Always use stable, unique keys
    ```typescript
-   {albums?.map((album: SimplifiedAlbum) => (
-     <AlbumCard album={album} key={album.id} />
-   ))}
+   {
+     albums?.map((album: SimplifiedAlbum) => (
+       <AlbumCard album={album} key={album.id} />
+     ));
+   }
    ```
 
 ### Astro File Style
 
 1. **Use `.astro` files for page/layout components**:
+
    - Frontmatter between `---`
    - Component template below
    - Import React components directly
 
 2. **Example structure**:
+
    ```astro
    ---
    import Layout from '../layouts/Layout.astro';
@@ -222,12 +231,11 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 ### Styling
 
 1. **Use Tailwind CSS utility classes**:
+
    ```tsx
    <section className="max-w-lg mx-auto">
      <form className="p-4">
-       <div className="flex flex-col">
-         {/* content */}
-       </div>
+       <div className="flex flex-col">{/* content */}</div>
      </form>
    </section>
    ```
@@ -239,21 +247,23 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 
 1. **Service layer pattern**: Wrap API calls in service functions (see `src/services/spotify.ts`)
 2. **Environment variables**: Use `import.meta.env.PUBLIC_*` for public variables
+
    - Define in `.env` file
    - Type in `src/env.d.ts`
 
 3. **Example API service**:
+
    ```typescript
    import { SpotifyApi, type SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 
    const spotify = SpotifyApi.withClientCredentials(
      import.meta.env.PUBLIC_SPOTIFY_CLIENT_ID,
-     import.meta.env.PUBLIC_SPOTIFY_CLIENT_SECRET
+     import.meta.env.PUBLIC_SPOTIFY_CLIENT_SECRET,
    );
 
    export const getAlbums = async (albumTitle: albumTitle) => {
      const albums: SimplifiedAlbum[] = (
-       await spotify.search(albumTitle, ["album"], 'AU', 50)
+       await spotify.search(albumTitle, ["album"], "AU", 50)
      ).albums.items;
      return albums;
    };
@@ -262,6 +272,7 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 ### Performance Considerations
 
 1. **Image loading**: Use `loading="lazy"` for images
+
    ```tsx
    <img src={url} loading="lazy" />
    ```
@@ -290,6 +301,7 @@ PUBLIC_SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
 ## Future Enhancements
 
 The TODO list includes:
+
 - Proper design improvements
 - Integration with Notion API to send data directly
 - Performance optimizations
