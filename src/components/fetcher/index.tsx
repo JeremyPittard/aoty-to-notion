@@ -33,11 +33,9 @@ const FetchForm = () => {
       </form>
       <div className="flex flex-col gap-4">
         {isLoading ? <h2>doing the thing</h2> : null}
-        <ul>
-          {albums?.map((album: DiscogsSearchResult) => (
-            <AlbumCard album={album} key={album.catno} />
-          ))}
-        </ul>
+        {albums?.map((album: DiscogsSearchResult) => (
+          <AlbumCard album={album} key={album.catno} />
+        ))}
       </div>
     </section>
   );

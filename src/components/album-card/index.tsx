@@ -20,26 +20,18 @@ const copyContent = async (string: string) => {
 const AlbumCard = ({ album }: AlbumCardProps) => {
   const genres = [[...new Set([...album.genre, ...album.style])]];
   return (
-    <article className="album-card flex p-4">
+    <article className="album-card flex rounded-lg border-gray-200 border-2">
       <img
         src={album.cover_image}
         alt=""
         height={144}
         width={144}
-        onClick={() => copyContent(album.cover_image)}
-        className="cursor-pointer self-start"
+        className="self-start"
         loading="lazy"
       />
       <div className="details px-2 pb-2">
-        <h2 className="font-bold flex items-center">
-          {album.title}
-          <button
-            className="ml-3"
-            onClick={() => copyContent(`${album.title} - ${album.title}`)}
-          >
-            <Copy />
-          </button>
-        </h2>
+        <h2 className="font-bold flex items-center">{album.title}</h2>
+        <br />
         <table>
           <tr>
             <td>
@@ -47,11 +39,6 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
             </td>
             <td>
               <p>{album.title}</p>
-            </td>
-            <td>
-              <button onClick={() => copyContent(album.title)}>
-                <Copy />
-              </button>
             </td>
           </tr>
           <tr>
@@ -61,50 +48,17 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
             <td>
               <p>{album.title}</p>
             </td>
-            <td>
-              <button onClick={() => copyContent(album.title)}>
-                <Copy />
-              </button>
-            </td>
           </tr>
-
-          {/* currently does not return anything from spotify, they don't plan on fixing it soon so included just incase it ever starts working and I don't have to constantly check */}
           {genres ? (
             <tr>
               <td>
                 <p className="font-semibold">Genres:</p>
               </td>
               <td>{genres.map((genre) => genre)}</td>
-              <td>
-                <button
-                  onClick={() =>
-                    copyContent(genres.map((genre) => genre).join(" "))
-                  }
-                >
-                  <Copy />
-                </button>
-              </td>
             </tr>
           ) : null}
-          <tr>
-            <td>
-              <p className="font-semibold">Image Url:</p>
-            </td>
-            <td>
-              <p>{album.cover_image}</p>
-            </td>
-            <td>
-              <button onClick={() => copyContent(album.cover_image)}>
-                <Copy />
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <p className="font-semibold">Embed Url:</p>
-            </td>
-          </tr>
         </table>
+        <button>Send it</button>
       </div>
     </article>
   );
