@@ -1,8 +1,9 @@
 import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 import { Copy } from "lucide-react";
+import type { DiscogsSearchResult } from "../../services/discogs";
 
 type AlbumCardProps = {
-  album: SimplifiedAlbum;
+  album: DiscogsSearchResult;
 };
 
 const copyContent = async (string: string) => {
@@ -15,26 +16,26 @@ const copyContent = async (string: string) => {
     /* Rejected - text failed to copy to the clipboard */
   }
 };
+
 const AlbumCard = ({ album }: AlbumCardProps) => {
+  const genres = [[...new Set([...album.genre, ...album.style])]];
   return (
     <article className="album-card flex p-4">
       <img
-        src={album.images[0].url}
+        src={album.cover_image}
         alt=""
         height={144}
         width={144}
-        onClick={() => copyContent(album.images[0].url)}
+        onClick={() => copyContent(album.cover_image)}
         className="cursor-pointer self-start"
         loading="lazy"
       />
       <div className="details px-2 pb-2">
         <h2 className="font-bold flex items-center">
-          {`${album.artists[0].name} - ${album.name}`}{" "}
+          {album.title}
           <button
             className="ml-3"
-            onClick={() =>
-              copyContent(`${album.artists[0].name} - ${album.name}`)
-            }
+            onClick={() => copyContent(`${album.title} - ${album.title}`)}
           >
             <Copy />
           </button>
@@ -45,16 +46,10 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
               <p className="font-semibold">Artist Name:</p>
             </td>
             <td>
-              <p>{album.artists.map((artist) => artist.name)}</p>
+              <p>{album.title}</p>
             </td>
             <td>
-              <button
-                onClick={() =>
-                  copyContent(
-                    album.artists.map((artist) => artist.name).join(" ")
-                  )
-                }
-              >
+              <button onClick={() => copyContent(album.title)}>
                 <Copy />
               </button>
             </td>
@@ -64,26 +59,26 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
               <p className="font-semibold">Album Name:</p>
             </td>
             <td>
-              <p>{album.name}</p>
+              <p>{album.title}</p>
             </td>
             <td>
-              <button onClick={() => copyContent(album.name)}>
+              <button onClick={() => copyContent(album.title)}>
                 <Copy />
               </button>
             </td>
           </tr>
 
           {/* currently does not return anything from spotify, they don't plan on fixing it soon so included just incase it ever starts working and I don't have to constantly check */}
-          {album.genres ? (
+          {genres ? (
             <tr>
               <td>
                 <p className="font-semibold">Genres:</p>
               </td>
-              <td>{album.genres.map((genre) => genre)}</td>
+              <td>{genres.map((genre) => genre)}</td>
               <td>
                 <button
                   onClick={() =>
-                    copyContent(album.genres.map((genre) => genre).join(" "))
+                    copyContent(genres.map((genre) => genre).join(" "))
                   }
                 >
                   <Copy />
@@ -96,10 +91,10 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
               <p className="font-semibold">Image Url:</p>
             </td>
             <td>
-              <p>{album.images[0].url}</p>
+              <p>{album.cover_image}</p>
             </td>
             <td>
-              <button onClick={() => copyContent(album.images[0].url)}>
+              <button onClick={() => copyContent(album.cover_image)}>
                 <Copy />
               </button>
             </td>
@@ -107,14 +102,6 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
           <tr>
             <td>
               <p className="font-semibold">Embed Url:</p>
-            </td>
-            <td>
-              <p>{album.external_urls.spotify}</p>
-            </td>
-            <td>
-              <button onClick={() => copyContent(album.external_urls.spotify)}>
-                <Copy />
-              </button>
             </td>
           </tr>
         </table>
