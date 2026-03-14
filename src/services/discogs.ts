@@ -43,7 +43,7 @@ export const searchAlbums = async (albumName: string) => {
     )}&type=master&sort=date_added&sort_order=desc`,
     {
       headers: {
-        Authorization: `Discogs token=ZCrqJSSbZXDfbhHzDfflSWbEMrDylZsxGeebCMhK`,
+        Authorization: `Discogs token=${import.meta.env.PUBLIC_DISCOGS_TOKEN}`,
       },
     },
   );

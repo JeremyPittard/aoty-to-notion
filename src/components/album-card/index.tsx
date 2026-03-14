@@ -2,11 +2,22 @@ import type { DiscogsSearchResult } from "../../services/discogs";
 import { sendToNotion } from "../../services/notion";
 
 type AlbumCardProps = {
-  album: DiscogsSearchResult;
+  album?: DiscogsSearchResult;
+  skeleton?: boolean;
 };
 
-const AlbumCard = ({ album }: AlbumCardProps) => {
-  const genres = [...new Set([...(album.genre ?? []), ...(album.style ?? [])])];
+const AlbumCard = ({ album, skeleton }: AlbumCardProps) => {
+  if (skeleton && !album) {
+    return (
+      <article className="h-64 group grid animate-pulse rounded-sm max-w-2xl overflow-hidden border border-neutral-300 bg-neutral-50 text-neutral-600 ">
+        <div className="h-full w-full block animate-pulse bg-gray-400"></div>
+      </article>
+    );
+  }
+
+  const genres = [
+    ...new Set([...(album?.genre ?? []), ...(album?.style ?? [])]),
+  ];
 
   const handleSendToNotion = async () => {
     try {
@@ -22,52 +33,31 @@ const AlbumCard = ({ album }: AlbumCardProps) => {
   const [artist, albumTitle] = album.title.split(" - ");
 
   return (
-    <article className="album-card flex rounded-lg border-gray-200 border-2">
-      <img
-        src={album.cover_image}
-        alt=""
-        height={144}
-        width={144}
-        className="self-start"
-        loading="lazy"
-      />
-      <div className="details px-2 pb-2">
-        <h2 className="font-bold flex items-center">{album.title}</h2>
-        <br />
-        <table>
-          <tbody>
-            <tr>
-              <td>
-                <p className="font-semibold">Artist Name:</p>
-              </td>
-              <td>
-                <p>{artist || album.title}</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p className="font-semibold">Album Name:</p>
-              </td>
-              <td>
-                <p>{albumTitle || album.title}</p>
-              </td>
-            </tr>
-            {genres.length > 0 ? (
-              <tr>
-                <td>
-                  <p className="font-semibold">Genres:</p>
-                </td>
-                <td>{genres.join(", ")}</td>
-              </tr>
-            ) : null}
-          </tbody>
-          {/* TODO: make this purdy */}
-        </table>
+    <article className="group grid rounded-sm max-w-2xl grid-cols-1 md:grid-cols-8 overflow-hidden border border-neutral-300 bg-neutral-50 text-neutral-600 h-64 ">
+      <div className="col-span-3 overflow-hidden">
+        <img
+          src={
+            album?.cover_image ??
+            `https://images.placeholders.dev/?width=300&height=300&text=No+Cover`
+          }
+          className="h-52 md:h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+          alt="a men wearing VR goggles"
+        />
+      </div>
+      <div className="flex flex-col justify-center p-6 col-span-5">
+        <small className="mb-4 font-medium">{artist}</small>
+        <h3
+          className="text-balance text-xl font-bold text-neutral-900 lg:text-2xl "
+          aria-describedby="articleDescription"
+        >
+          {albumTitle || album?.title}
+        </h3>
+        <p className="my-4 max-w-lg text-pretty text-sm">{genres.join(", ")}</p>
         <button
           onClick={handleSendToNotion}
-          className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          className="mt-auto w-fit font-medium text-black underline-offset-2 hover:underline focus:underline focus:outline-hidden"
         >
-          Send it
+          Send It!
         </button>
       </div>
     </article>
