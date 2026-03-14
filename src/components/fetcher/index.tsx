@@ -10,7 +10,7 @@ const FetchForm = () => {
     event?.preventDefault();
     setIsLoading(true);
     setAlbums(null);
-    const res = await fetch("/api/dicogs", {
+    const res = await fetch("/api/discogs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ albumName: albumTitle }),
@@ -42,7 +42,10 @@ const FetchForm = () => {
         <div className="flex flex-col gap-4 ">
           {isLoading ? <AlbumCard skeleton={true} /> : null}
           {albums?.map((album: DiscogsSearchResult) => (
-            <AlbumCard album={album} key={album.catno + album.master_id} />
+            <AlbumCard
+              album={album}
+              key={`${album.catno}-${album.master_id}`}
+            />
           ))}
         </div>
       </section>

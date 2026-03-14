@@ -7,13 +7,15 @@ type AlbumCardProps = {
 };
 
 const AlbumCard = ({ album, skeleton }: AlbumCardProps) => {
-  if (skeleton && !album) {
+  if (skeleton) {
     return (
       <article className="h-64 group grid animate-pulse rounded-sm max-w-2xl overflow-hidden border border-neutral-300 bg-neutral-50 text-neutral-600 ">
         <div className="h-full w-full block animate-pulse bg-gray-400"></div>
       </article>
     );
   }
+
+  if (!album) return null;
 
   const genres = [
     ...new Set([...(album?.genre ?? []), ...(album?.style ?? [])]),
@@ -41,21 +43,19 @@ const AlbumCard = ({ album, skeleton }: AlbumCardProps) => {
             `https://images.placeholders.dev/?width=300&height=300&text=No+Cover`
           }
           className="h-52 md:h-full w-full object-cover transition duration-700 ease-out group-hover:scale-105"
-          alt="a men wearing VR goggles"
+          alt=""
         />
       </div>
       <div className="flex flex-col justify-center p-6 col-span-5">
         <small className="mb-4 font-medium">{artist}</small>
-        <h3
-          className="text-balance text-xl font-bold text-neutral-900 lg:text-2xl "
-          aria-describedby="articleDescription"
-        >
+        <h3 className="text-balance text-xl font-bold text-neutral-900 lg:text-2xl ">
           {albumTitle || album?.title}
         </h3>
         <p className="my-4 max-w-lg text-pretty text-sm">{genres.join(", ")}</p>
         <button
           onClick={handleSendToNotion}
           className="mt-auto w-fit font-medium text-black underline-offset-2 hover:underline focus:underline focus:outline-hidden"
+          type="button"
         >
           Send It!
         </button>
