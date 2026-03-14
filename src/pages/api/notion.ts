@@ -2,56 +2,6 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 
-export const GET: APIRoute = async () => {
-  try {
-    console.log(
-      "Notion Token:",
-      import.meta.env.NOTION_TOKEN ? "Token exists" : "No token",
-    );
-    console.log("Notion DB ID:", import.meta.env.NOTION_DB_ID);
-
-    const response = await fetch(
-      `https://api.notion.com/v1/databases/${import.meta.env.NOTION_DB_ID}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.NOTION_TOKEN}`,
-          "Notion-Version": "2022-06-28",
-        },
-      },
-    );
-
-    console.log("Notion API response status:", response.status);
-    const responseText = await response.text();
-    console.log("Notion API raw response:", responseText);
-
-    if (!response.ok) {
-      return new Response(responseText, {
-        status: response.status,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(responseText, {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("API endpoint error:", error);
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Unknown error",
-        message: "Failed to get Notion database",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
-};
-
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
@@ -64,13 +14,6 @@ export const POST: APIRoute = async ({ request }) => {
       },
     };
 
-    console.log("Notion API request:", JSON.stringify(notionData, null, 2));
-    console.log(
-      "Notion Token:",
-      import.meta.env.NOTION_TOKEN ? "Token exists" : "No token",
-    );
-    console.log("Notion DB ID:", import.meta.env.NOTION_DB_ID);
-
     const response = await fetch("https://api.notion.com/v1/pages", {
       method: "POST",
       headers: {
@@ -81,14 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
       body: JSON.stringify(notionData),
     });
 
-    console.log("Notion API response status:", response.status);
-    console.log(
-      "Notion API response headers:",
-      Object.fromEntries(response.headers.entries()),
-    );
-
     const responseText = await response.text();
-    console.log("Notion API raw response:", responseText);
 
     if (!responseText || responseText.trim() === "") {
       return new Response(
@@ -113,7 +49,6 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify({
           error: "Invalid JSON response",
           message: "Failed to parse Notion API response",
-          rawResponse: responseText,
         }),
         {
           status: response.status || 500,
