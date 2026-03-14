@@ -8,9 +8,9 @@ const FetchForm = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const handleSubmit = async (event: FormEvent) => {
     event?.preventDefault();
+    setIsLoading(true);
     setAlbums(null);
     const albums = await searchAlbums(albumTitle);
-    setIsLoading(true);
     setAlbums(albums);
     setIsLoading(false);
   };
