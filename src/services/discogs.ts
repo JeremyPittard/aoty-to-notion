@@ -35,18 +35,3 @@ export interface DiscogsSearchResponse {
     items: number;
   };
 }
-
-export const searchAlbums = async (albumName: string) => {
-  const res = await fetch(
-    `https://api.discogs.com/database/search?q=${encodeURIComponent(
-      albumName,
-    )}&type=master&sort=date_added&sort_order=desc`,
-    {
-      headers: {
-        Authorization: `Discogs token=ZCrqJSSbZXDfbhHzDfflSWbEMrDylZsxGeebCMhK`,
-      },
-    },
-  );
-  const data: DiscogsSearchResponse = await res.json();
-  return data.results;
-};
