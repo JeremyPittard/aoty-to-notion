@@ -41,7 +41,6 @@ There are no explicit linting/formatting scripts configured. However, you should
 1. Follow the existing code style (see guidelines below)
 2. Use TypeScript for all new code
 3. Ensure builds pass (`pnpm build`)
-4. Verify the dev server runs without errors (`pnpm dev`)
 
 ### Testing
 
@@ -258,7 +257,7 @@ import type { SimplifiedAlbum } from "@spotify/web-api-ts-sdk";
 
    const spotify = SpotifyApi.withClientCredentials(
      import.meta.env.PUBLIC_SPOTIFY_CLIENT_ID,
-     import.meta.env.PUBLIC_SPOTIFY_CLIENT_SECRET,
+     import.meta.env.PUBLIC_SPOTIFY_CLIENT_SECRET
    );
 
    export const getAlbums = async (albumTitle: albumTitle) => {

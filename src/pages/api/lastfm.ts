@@ -14,12 +14,14 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const res = await fetch(
-      `https://api.discogs.com/database/search?q=${encodeURIComponent(
+      `https://ws.audioscrobbler.com/2.0/?method=album.search&album=${encodeURIComponent(
         albumName
-      )}&type=master&sort=date_added&sort_order=desc&page=${page}&per_page=${perPage}`,
+      )}&api_key=${
+        import.meta.env.LASTFM_API_KEY
+      }&format=json&page=${page}&limit=${perPage}`,
       {
         headers: {
-          Authorization: `Discogs token=${import.meta.env.DISCOGS_TOKEN}`,
+          "Content-Type": "application/json",
         },
       }
     );
@@ -35,18 +37,24 @@ export const POST: APIRoute = async ({ request }) => {
 
     return new Response(
       JSON.stringify({
-        results: data.results,
+        results: data.results.albummatches.album,
         pagination: {
-          page: data.pagination.page,
-          perPage: data.pagination.per_page,
-          totalPages: data.pagination.pages,
-          totalItems: data.pagination.items,
+          page:
+            parseInt(data.results["opensearch:startIndex"]) /
+              parseInt(data.results["opensearch:itemsPerPage"]) +
+            1,
+          perPage: parseInt(data.results["opensearch:itemsPerPage"]),
+          totalPages: Math.ceil(
+            parseInt(data.results["opensearch:totalResults"]) /
+              parseInt(data.results["opensearch:itemsPerPage"])
+          ),
+          totalItems: parseInt(data.results["opensearch:totalResults"]),
         },
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Discogs API error:", error);
+    console.error("Last.fm API error:", error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",

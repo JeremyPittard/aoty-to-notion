@@ -1,18 +1,14 @@
-export const sendToNotion = async (album: any) => {
-  const { title, genre, style, year, cover_image } = album;
+import type { StandardAlbum } from "../types/album";
 
-  // Split title into artist and album name
-  // Assuming format: "Artist - Album"
-  const [artist, albumTitle] = title.split(" - ");
-
-  // Combine genre and style for comma-separated genre string
-  const genres = [...new Set([...genre, ...style])].join(", ");
+export const sendToNotion = async (album: StandardAlbum) => {
+  // Combine genre array into comma-separated string
+  const genres = album.genre?.join(", ") || "Unknown";
 
   const data = {
     cover: {
       type: "external",
       external: {
-        url: cover_image,
+        url: album.coverImage,
       },
     },
     properties: {
@@ -25,7 +21,7 @@ export const sendToNotion = async (album: any) => {
         rich_text: [
           {
             text: {
-              content: artist || title,
+              content: album.artist,
             },
           },
         ],
@@ -34,7 +30,7 @@ export const sendToNotion = async (album: any) => {
         rich_text: [
           {
             text: {
-              content: albumTitle || title,
+              content: album.title,
             },
           },
         ],
@@ -43,7 +39,7 @@ export const sendToNotion = async (album: any) => {
         rich_text: [
           {
             text: {
-              content: genres || "Unknown",
+              content: genres,
             },
           },
         ],
@@ -52,7 +48,7 @@ export const sendToNotion = async (album: any) => {
         rich_text: [
           {
             text: {
-              content: year || "",
+              content: album.year || "",
             },
           },
         ],
@@ -74,7 +70,7 @@ export const sendToNotion = async (album: any) => {
       const errorData = await response.json();
       console.error("Notion API error:", errorData);
       throw new Error(
-        `Failed to send to Notion: ${response.status} ${response.statusText}`,
+        `Failed to send to Notion: ${response.status} ${response.statusText}`
       );
     }
 

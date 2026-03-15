@@ -36,7 +36,7 @@ export const POST: APIRoute = async ({ request }) => {
         {
           status: response.status || 500,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
         {
           status: response.status || 500,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -66,7 +66,7 @@ export const POST: APIRoute = async ({ request }) => {
         {
           status: response.status,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -78,7 +78,7 @@ export const POST: APIRoute = async ({ request }) => {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      },
+      }
     );
   } catch (error) {
     console.error("API endpoint error:", error);
@@ -90,7 +90,7 @@ export const POST: APIRoute = async ({ request }) => {
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
-      },
+      }
     );
   }
 };
