@@ -2,9 +2,15 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 
+type DiscogsSearchRequest = {
+  albumName: string;
+  page?: number;
+  perPage?: number;
+};
+
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { albumName, page = 1, perPage = 20 } = await request.json();
+    const { albumName, page = 1, perPage = 20 }: DiscogsSearchRequest = await request.json();
 
     if (!albumName) {
       return new Response(JSON.stringify({ error: "Album name is required" }), {

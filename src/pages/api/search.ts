@@ -55,7 +55,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    if (sources.includes("lastfm")) {
+     if (sources.includes("lastfm")) {
       promises.push(
         fetch(
           `https://ws.audioscrobbler.com/2.0/?method=album.search&album=${encodeURIComponent(
@@ -70,9 +70,11 @@ export const POST: APIRoute = async ({ request }) => {
         ).then(async (res) => {
           const searchData = await res.json();
 
-          // Fetch additional album info for each result to get year and genre
+          // Fetch additional album info for limited results to get year and genre
           if (searchData.results?.albummatches?.album) {
-            const albumPromises = searchData.results.albummatches.album.map(
+            const enrichmentLimit = 5; // Limit to first 5 albums for enrichment
+            const albumsToEnrich = searchData.results.albummatches.album.slice(0, enrichmentLimit);
+            const albumPromises = albumsToEnrich.map(
               async (album: any) => {
                 if (album.mbid) {
                   try {
@@ -96,9 +98,12 @@ export const POST: APIRoute = async ({ request }) => {
               },
             );
 
-            searchData.results.albummatches.album = await Promise.all(
-              albumPromises,
-            );
+            const enrichedAlbums = await Promise.all(albumPromises);
+            // Merge enriched albums back into original list
+            searchData.results.albummatches.album = [
+              ...enrichedAlbums,
+              ...searchData.results.albummatches.album.slice(enrichmentLimit)
+            ];
           }
 
           return searchData;
@@ -110,7 +115,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     let discogsResults: any[] = [];
     let lastfmResults: any[] = [];
-    let pagination: any;
+    let discogsPagination: any;
+    let lastfmPagination: any;
 
     results.forEach((result) => {
       if (result.status === "fulfilled") {
@@ -120,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
         // Parse Discogs results
         if (data.results && Array.isArray(data.results)) {
           discogsResults = data.results;
-          pagination = data.pagination;
+          discogsPagination = data.pagination;
         }
 
         // Parse Last.fm results
@@ -129,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
           Array.isArray(data.results.albummatches.album)
         ) {
           lastfmResults = data.results.albummatches.album;
-          pagination = {
+          lastfmPagination = {
             page: (() => {
               const startIndex =
                 parseInt(data.results["opensearch:startIndex"]) || 0;
@@ -150,6 +156,9 @@ export const POST: APIRoute = async ({ request }) => {
         console.error("API request failed:", result.reason);
       }
     });
+
+    // Choose primary pagination - prioritize Last.fm if available
+    const pagination = lastfmPagination || discogsPagination;
 
     console.log(
       "Processed results - Discogs:",

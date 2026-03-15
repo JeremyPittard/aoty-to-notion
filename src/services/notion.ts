@@ -48,7 +48,7 @@ export const sendToNotion = async (album: StandardAlbum) => {
         rich_text: [
           {
             text: {
-              content: album.year || "",
+              content: album.year || new Date().getFullYear().toString(),
             },
           },
         ],
@@ -70,7 +70,7 @@ export const sendToNotion = async (album: StandardAlbum) => {
       const errorData = await response.json();
       console.error("Notion API error:", errorData);
       throw new Error(
-        `Failed to send to Notion: ${response.status} ${response.statusText}`
+        `Failed to send to Notion: ${response.status} ${response.statusText}`,
       );
     }
 

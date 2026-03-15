@@ -1,4 +1,3 @@
-import type { DiscogsSearchResult } from "../services/discogs";
 import type { StandardAlbum } from "../types/album";
 
 export const normalizeDiscogsResult = (result: any): StandardAlbum => {
@@ -27,11 +26,12 @@ export const normalizeLastFmResult = (result: any): StandardAlbum => {
   console.log("Normalizing Last.fm result:", result);
 
   // Get the largest available image
+  const images = Array.isArray(result.image) ? result.image : [];
   const image =
-    result.image.find((img: any) => img.size === "mega") ||
-    result.image.find((img: any) => img.size === "extralarge") ||
-    result.image.find((img: any) => img.size === "large") ||
-    result.image[0];
+    images.find((img: any) => img.size === "mega") ||
+    images.find((img: any) => img.size === "extralarge") ||
+    images.find((img: any) => img.size === "large") ||
+    images[0];
 
   // Extract year from wiki if available (e.g., "May 1994" becomes "1994")
   let year: string | undefined;

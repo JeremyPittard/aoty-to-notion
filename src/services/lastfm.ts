@@ -10,10 +10,6 @@ export interface LastFmAlbum {
   mbid: string;
 }
 
-export interface LastFmSearchResult {
-  album: LastFmAlbum;
-}
-
 export interface LastFmSearchResponse {
   results: {
     "opensearch:Query": {
@@ -26,7 +22,7 @@ export interface LastFmSearchResponse {
     "opensearch:startIndex": string;
     "opensearch:itemsPerPage": string;
     albummatches: {
-      album: LastFmSearchResult[];
+      album: LastFmAlbum[];
     };
     "@attr": {
       for: string;

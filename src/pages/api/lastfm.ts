@@ -4,7 +4,7 @@ import type { APIRoute } from "astro";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { albumName, page = 1, perPage = 20 } = await request.json();
+    const { albumName, page: reqPage = 1, perPage: reqPerPage = 20 } = await request.json();
 
     if (!albumName) {
       return new Response(JSON.stringify({ error: "Album name is required" }), {
@@ -18,7 +18,7 @@ export const POST: APIRoute = async ({ request }) => {
         albumName
       )}&api_key=${
         import.meta.env.LASTFM_API_KEY
-      }&format=json&page=${page}&limit=${perPage}`,
+      }&format=json&page=${reqPage}&limit=${reqPerPage}`,
       {
         headers: {
           "Content-Type": "application/json",
@@ -35,20 +35,24 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    const albums = data?.results?.albummatches?.album ?? [];
+    const startIndex = parseInt(data.results["opensearch:startIndex"]) || 0;
+    const itemsPerPage = parseInt(data.results["opensearch:itemsPerPage"]) || 20;
+    const totalResults = parseInt(data.results["opensearch:totalResults"]) || 0;
+    
+    const page = Math.floor(startIndex / itemsPerPage) + 1;
+    const perPage = itemsPerPage;
+    const totalPages = itemsPerPage > 0 ? Math.ceil(totalResults / itemsPerPage) : 0;
+    const totalItems = totalResults;
+
     return new Response(
       JSON.stringify({
-        results: data.results.albummatches.album,
+        results: albums,
         pagination: {
-          page:
-            parseInt(data.results["opensearch:startIndex"]) /
-              parseInt(data.results["opensearch:itemsPerPage"]) +
-            1,
-          perPage: parseInt(data.results["opensearch:itemsPerPage"]),
-          totalPages: Math.ceil(
-            parseInt(data.results["opensearch:totalResults"]) /
-              parseInt(data.results["opensearch:itemsPerPage"])
-          ),
-          totalItems: parseInt(data.results["opensearch:totalResults"]),
+          page,
+          perPage,
+          totalPages,
+          totalItems,
         },
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }

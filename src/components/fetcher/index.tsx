@@ -14,12 +14,30 @@ const FetchForm = () => {
   const [sources, setSources] = useState<("discogs" | "lastfm")[]>(["lastfm"]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [perPage, setPerPage] = useState<number>(20);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSearchResults = async (payload: { albumName: string; sources?: ("discogs" | "lastfm")[]; page?: number; perPage?: number }) => {
+    const res = await fetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error(errorData.error || `Request failed with status ${res.status}`);
+    }
+
+    const data = await res.json();
+    return { albums: data.albums, pagination: data.pagination };
+  };
 
   const handleSubmit = async (event: FormEvent) => {
     event?.preventDefault();
     setIsLoading(true);
     setAlbums(null);
     setCurrentPage(1);
+    setError(null);
 
     const searchOptions: SearchOptions = {
       sources,
@@ -27,19 +45,19 @@ const FetchForm = () => {
       perPage,
     };
 
-    const res = await fetch("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const data = await fetchSearchResults({
         albumName: albumTitle,
         ...searchOptions,
-      }),
-    });
-
-    const data = await res.json();
-    setAlbums(data.albums);
-    setPagination(data.pagination);
-    setIsLoading(false);
+      });
+      setAlbums(data.albums);
+      setPagination(data.pagination);
+    } catch (err) {
+      console.error("Search failed:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePageChange = async (newPage: number) => {
@@ -49,6 +67,7 @@ const FetchForm = () => {
 
     setIsLoading(true);
     setCurrentPage(newPage);
+    setError(null);
 
     const searchOptions: SearchOptions = {
       sources,
@@ -56,19 +75,19 @@ const FetchForm = () => {
       perPage,
     };
 
-    const res = await fetch("/api/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      const data = await fetchSearchResults({
         albumName: albumTitle,
         ...searchOptions,
-      }),
-    });
-
-    const data = await res.json();
-    setAlbums(data.albums);
-    setPagination(data.pagination);
-    setIsLoading(false);
+      });
+      setAlbums(data.albums);
+      setPagination(data.pagination);
+    } catch (err) {
+      console.error("Page change failed:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSourceToggle = (source: "discogs" | "lastfm") => {
