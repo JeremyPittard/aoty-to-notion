@@ -12,6 +12,16 @@ export const sendToNotion = async (album: StandardAlbum) => {
       },
     },
     properties: {
+      Name: {
+        // or whatever your title property is called — check your DB schema
+        title: [
+          {
+            text: {
+              content: `${album.artist} - ${album.title}`, // your desired page title
+            },
+          },
+        ],
+      },
       Status: {
         status: {
           name: "Queue",
