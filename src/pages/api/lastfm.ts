@@ -2,15 +2,9 @@ export const prerender = false;
 
 import type { APIRoute } from "astro";
 
-type DiscogsSearchRequest = {
-  albumName: string;
-  page?: number;
-  perPage?: number;
-};
-
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { albumName, page = 1, perPage = 20 }: DiscogsSearchRequest = await request.json();
+    const { albumName, page: reqPage = 1, perPage: reqPerPage = 20 } = await request.json();
 
     if (!albumName) {
       return new Response(JSON.stringify({ error: "Album name is required" }), {
@@ -20,12 +14,14 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const res = await fetch(
-      `https://api.discogs.com/database/search?q=${encodeURIComponent(
+      `https://ws.audioscrobbler.com/2.0/?method=album.search&album=${encodeURIComponent(
         albumName
-      )}&type=master&sort=date_added&sort_order=desc&page=${page}&per_page=${perPage}`,
+      )}&api_key=${
+        import.meta.env.LASTFM_API_KEY
+      }&format=json&page=${reqPage}&limit=${reqPerPage}`,
       {
         headers: {
-          Authorization: `Discogs token=${import.meta.env.DISCOGS_TOKEN}`,
+          "Content-Type": "application/json",
         },
       }
     );
@@ -39,20 +35,30 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    const albums = data?.results?.albummatches?.album ?? [];
+    const startIndex = parseInt(data.results["opensearch:startIndex"]) || 0;
+    const itemsPerPage = parseInt(data.results["opensearch:itemsPerPage"]) || 20;
+    const totalResults = parseInt(data.results["opensearch:totalResults"]) || 0;
+    
+    const page = Math.floor(startIndex / itemsPerPage) + 1;
+    const perPage = itemsPerPage;
+    const totalPages = itemsPerPage > 0 ? Math.ceil(totalResults / itemsPerPage) : 0;
+    const totalItems = totalResults;
+
     return new Response(
       JSON.stringify({
-        results: data.results,
+        results: albums,
         pagination: {
-          page: data.pagination.page,
-          perPage: data.pagination.per_page,
-          totalPages: data.pagination.pages,
-          totalItems: data.pagination.items,
+          page,
+          perPage,
+          totalPages,
+          totalItems,
         },
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Discogs API error:", error);
+    console.error("Last.fm API error:", error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : "Unknown error",
