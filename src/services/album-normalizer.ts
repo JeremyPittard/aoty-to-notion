@@ -44,10 +44,17 @@ export const normalizeLastFmResult = (result: any): StandardAlbum => {
 
   // Extract genre tags from result if available
   const genre: string[] = [];
-  if (result.tags?.tag) {
-    result.tags.tag.forEach((tag: any) => {
-      genre.push(tag.name);
-    });
+  const tags = result.tags?.tag;
+  if (tags) {
+    if (Array.isArray(tags)) {
+      tags.forEach((tag: any) => {
+        if (tag?.name) genre.push(tag.name);
+      });
+    } else if (typeof tags === "object") {
+      if (tags.name) genre.push(tags.name);
+    } else if (typeof tags === "string") {
+      genre.push(tags);
+    }
   }
 
   return {
