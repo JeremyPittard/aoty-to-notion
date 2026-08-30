@@ -14,6 +14,16 @@ export interface StandardAlbum {
   lastfmMbid?: string;
 }
 
+export interface SentAlbum {
+  title: string;
+  artist: string;
+  year: string;
+  genre: string[];
+  coverImage?: string;
+  source?: "discogs" | "lastfm";
+  sentAt: string;
+}
+
 export interface PaginationInfo {
   page: number;
   perPage: number;

@@ -1,14 +1,24 @@
 import type { StandardAlbum } from "../types/album";
 
-export const sendToNotion = async (album: StandardAlbum) => {
+export const defaultCoverImage =
+  "https://images.placeholders.dev/?width=300&height=300&text=No+Cover";
+
+export type NotionAlbumInput = Pick<StandardAlbum, "title" | "artist"> & {
+  year?: string;
+  genre?: string[];
+  coverImage?: string;
+};
+
+export const sendToNotion = async (album: NotionAlbumInput) => {
   // Combine genre array into comma-separated string
   const genres = album.genre?.join(", ") || "Unknown";
+  const coverImage = album.coverImage || defaultCoverImage;
 
   const data = {
     cover: {
       type: "external",
       external: {
-        url: album.coverImage,
+        url: coverImage,
       },
     },
     properties: {
