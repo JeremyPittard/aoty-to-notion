@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Menu } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Download, Menu } from "lucide-react";
 import type {
   StandardAlbum,
   PaginationInfo,
@@ -11,6 +11,7 @@ import AlbumCard from "../album-card";
 import SuccessModal from "../success-modal";
 
 const sentAlbumsStorageKey = "aoty-sent-albums";
+const resultsPerPage = 20;
 
 const FetchForm = () => {
   const [albumTitle, setAlbumTitle] = useState<string>("");
@@ -19,12 +20,14 @@ const FetchForm = () => {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [sources, setSources] = useState<("discogs" | "lastfm")[]>(["lastfm"]);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [perPage, setPerPage] = useState<number>(20);
   const [error, setError] = useState<string | null>(null);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [isSendingCustom, setIsSendingCustom] = useState(false);
   const [isSentAlbumsModalOpen, setIsSentAlbumsModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isExportingNotionList, setIsExportingNotionList] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const isLoadingRef = useRef(false);
   const [sentAlbums, setSentAlbums] = useState<SentAlbum[]>(() => {
     if (typeof window === "undefined") return [];
 
@@ -44,7 +47,43 @@ const FetchForm = () => {
     );
   }, [sentAlbums]);
 
-  const fetchSearchResults = async (payload: { albumName: string; sources?: ("discogs" | "lastfm")[]; page?: number; perPage?: number }) => {
+  const handleExportNotionList = async () => {
+    setIsExportingNotionList(true);
+
+    try {
+      const response = await fetch("/api/notion-export");
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Failed to export the Notion list.");
+      }
+
+      const fileUrl = URL.createObjectURL(await response.blob());
+      const downloadLink = document.createElement("a");
+      downloadLink.href = fileUrl;
+      downloadLink.download = "aoty-albums.md";
+      document.body.append(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
+    } catch (exportError) {
+      console.error("Notion export failed:", exportError);
+      window.alert(
+        exportError instanceof Error
+          ? exportError.message
+          : "Failed to export the Notion list.",
+      );
+    } finally {
+      setIsExportingNotionList(false);
+    }
+  };
+
+  const fetchSearchResults = async (payload: {
+    albumName: string;
+    sources?: ("discogs" | "lastfm")[];
+    page?: number;
+    perPage?: number;
+  }) => {
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,22 +100,22 @@ const FetchForm = () => {
   };
 
   const handleSubmit = async (event: FormEvent) => {
-    event?.preventDefault();
+    event.preventDefault();
+    if (isLoadingRef.current) return;
+
+    isLoadingRef.current = true;
     setIsLoading(true);
     setAlbums(null);
+    setPagination(null);
     setCurrentPage(1);
     setError(null);
-
-    const searchOptions: SearchOptions = {
-      sources,
-      page: 1,
-      perPage,
-    };
 
     try {
       const data = await fetchSearchResults({
         albumName: albumTitle,
-        ...searchOptions,
+        sources,
+        page: 1,
+        perPage: resultsPerPage,
       });
       setAlbums(data.albums);
       setPagination(data.pagination);
@@ -84,23 +123,28 @@ const FetchForm = () => {
       console.error("Search failed:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
+      isLoadingRef.current = false;
       setIsLoading(false);
     }
   };
 
-  const handlePageChange = async (newPage: number) => {
-    if (newPage < 1 || (pagination && newPage > pagination.totalPages)) {
+  const loadNextPage = async () => {
+    if (
+      isLoadingRef.current ||
+      !pagination ||
+      currentPage >= pagination.totalPages
+    ) {
       return;
     }
 
+    isLoadingRef.current = true;
     setIsLoading(true);
-    setCurrentPage(newPage);
     setError(null);
 
     const searchOptions: SearchOptions = {
       sources,
-      page: newPage,
-      perPage,
+      page: currentPage + 1,
+      perPage: resultsPerPage,
     };
 
     try {
@@ -108,15 +152,37 @@ const FetchForm = () => {
         albumName: albumTitle,
         ...searchOptions,
       });
-      setAlbums(data.albums);
+      setAlbums((previousAlbums) => {
+        const existingIds = new Set(previousAlbums?.map((album) => album.id));
+        return [
+          ...(previousAlbums ?? []),
+          ...data.albums.filter((album: StandardAlbum) => !existingIds.has(album.id)),
+        ];
+      });
+      setCurrentPage((page) => page + 1);
       setPagination(data.pagination);
     } catch (err) {
-      console.error("Page change failed:", err);
+      console.error("Loading more albums failed:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
+      isLoadingRef.current = false;
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !albums || !pagination || currentPage >= pagination.totalPages || isLoading || error) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) void loadNextPage();
+    }, { rootMargin: "300px" });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [albums, currentPage, error, isLoading, pagination]);
 
   const handleSourceToggle = (source: "discogs" | "lastfm") => {
     setSources((prev) =>
@@ -191,7 +257,7 @@ const FetchForm = () => {
                       type="checkbox"
                       checked={sources.includes("discogs")}
                       onChange={() => handleSourceToggle("discogs")}
-                      className="mr-2"
+                      className="mr-2 accent-palette-paper"
                     />
                     Discogs
                   </label>
@@ -200,39 +266,25 @@ const FetchForm = () => {
                       type="checkbox"
                       checked={sources.includes("lastfm")}
                       onChange={() => handleSourceToggle("lastfm")}
-                      className="mr-2"
+                      className="mr-2 accent-palette-paper"
                     />
                     Last.fm
                   </label>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label>Results per page:</label>
-                <select
-                  value={perPage}
-                  onChange={(e) => setPerPage(parseInt(e.target.value))}
-                  className="border p-2 rounded"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-
               <div className="flex flex-wrap gap-3">
                 <button
                   type="submit"
-                  disabled={sources.length === 0}
-                  className="rounded bg-blue-500 p-2 text-white hover:bg-blue-600 disabled:bg-gray-300"
+                  disabled={sources.length === 0 || isLoading}
+                  className="rounded border border-palette-line p-2 text-palette-paper hover:bg-palette-raised disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Search
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsCustomModalOpen(true)}
-                  className="rounded border border-blue-500 p-2 text-blue-700 hover:bg-blue-50"
+                  className="send-custom-link text-palette-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-palette-paper"
                 >
                   Send Custom
                 </button>
@@ -246,14 +298,14 @@ const FetchForm = () => {
         <dialog
           open
           aria-labelledby="global-custom-album-title"
-          className="fixed inset-0 z-10 m-auto w-[calc(100%-2rem)] max-w-md rounded border border-neutral-300 bg-white p-0 text-neutral-900 shadow-xl"
+          className="app-modal fixed inset-0 z-10 m-auto w-[calc(100%-2rem)] max-w-md rounded border border-palette-line p-0 shadow-xl"
         >
           <form onSubmit={handleSendCustom} className="flex flex-col gap-4 p-6">
             <div>
-              <h2 id="global-custom-album-title" className="text-xl font-bold">
+              <h2 id="global-custom-album-title" className="font-serif text-xl font-bold">
                 Send a custom album
               </h2>
-              <p className="mt-1 text-sm text-neutral-600">
+              <p className="mt-1 text-sm text-palette-muted">
                 Add the details for an album that was not found in search.
               </p>
             </div>
@@ -266,7 +318,7 @@ const FetchForm = () => {
                 type="text"
                 required
                 autoFocus
-                className="rounded border border-neutral-300 p-2 font-normal"
+                className="rounded border border-palette-line p-2 font-normal"
               />
             </label>
 
@@ -277,7 +329,7 @@ const FetchForm = () => {
                 name="customBandName"
                 type="text"
                 required
-                className="rounded border border-neutral-300 p-2 font-normal"
+                className="rounded border border-palette-line p-2 font-normal"
               />
             </label>
 
@@ -291,17 +343,17 @@ const FetchForm = () => {
                 required
                 pattern="[0-9]{4}"
                 title="Enter a four-digit year"
-                className="rounded border border-neutral-300 p-2 font-normal"
+                className="rounded border border-palette-line p-2 font-normal"
               />
             </label>
 
             <label className="flex flex-col gap-1 text-sm font-medium" htmlFor="customGenre">
-              Genre <span className="font-normal text-neutral-500">(optional)</span>
+              Genre <span className="font-normal text-palette-muted">(optional)</span>
               <input
                 id="customGenre"
                 name="customGenre"
                 type="text"
-                className="rounded border border-neutral-300 p-2 font-normal"
+                className="rounded border border-palette-line p-2 font-normal"
               />
             </label>
 
@@ -310,14 +362,14 @@ const FetchForm = () => {
                 type="button"
                 onClick={() => setIsCustomModalOpen(false)}
                 disabled={isSendingCustom}
-                className="rounded border border-neutral-300 px-4 py-2 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded border border-palette-line px-4 py-2 hover:bg-palette-surface disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSendingCustom}
-                className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                className="rounded bg-palette-paper px-4 py-2 text-palette-ink hover:bg-palette-highlight disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSendingCustom ? "Sending..." : "Send to Notion"}
               </button>
@@ -326,21 +378,35 @@ const FetchForm = () => {
         </dialog>
       )}
 
-      {sentAlbums.length > 0 && (
+      <div className="fixed right-4 top-4 z-10 flex gap-2" role="toolbar" aria-label="Album list actions">
         <button
           type="button"
-          onClick={() => setIsSentAlbumsModalOpen(true)}
-          aria-label={`Review sent albums (${sentAlbums.length})`}
-          title={`Review sent albums (${sentAlbums.length})`}
-          className="fixed right-4 top-4 z-10 rounded border border-neutral-300 bg-white p-3 text-neutral-800 shadow transition hover:bg-neutral-50"
+          onClick={() => void handleExportNotionList()}
+          disabled={isExportingNotionList}
+          aria-busy={isExportingNotionList}
+          aria-label={isExportingNotionList ? "Exporting album list" : "Download album list as Markdown"}
+          title={isExportingNotionList ? "Exporting album list" : "Download album list as Markdown"}
+          className="rounded border border-palette-line bg-palette-surface p-3 text-palette-paper shadow transition hover:bg-palette-raised disabled:cursor-wait disabled:opacity-60"
         >
-          <Menu size={22} aria-hidden="true" />
+          <Download size={22} aria-hidden="true" />
         </button>
-      )}
+
+        {sentAlbums.length > 0 && !isSentAlbumsModalOpen && (
+          <button
+            type="button"
+            onClick={() => setIsSentAlbumsModalOpen(true)}
+            aria-label={`Review sent albums (${sentAlbums.length})`}
+            title={`Review sent albums (${sentAlbums.length})`}
+            className="rounded border border-palette-line bg-palette-surface p-3 text-palette-paper shadow transition hover:bg-palette-raised"
+          >
+            <Menu size={22} aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
       <section className="max-w-2xl mx-auto">
         <div className="flex flex-col gap-4">
-          {isLoading ? <AlbumCard skeleton={true} /> : null}
+          {isLoading && !albums ? <AlbumCard skeleton={true} /> : null}
           {albums?.map((album: StandardAlbum) => (
             <AlbumCard
               album={album}
@@ -352,33 +418,34 @@ const FetchForm = () => {
           ))}
 
           {albums && albums.length === 0 && !isLoading && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="py-8 text-center text-palette-muted">
               No albums found. Try adjusting your search query.
             </div>
           )}
 
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 py-4">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || isLoading}
-                className="px-4 py-2 border rounded hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {pagination.totalPages}
-              </span>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === pagination.totalPages || isLoading}
-                className="px-4 py-2 border rounded hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+          {error && (
+            <div role="alert" className="py-4 text-center text-rose-300">
+              <p>{error}</p>
+              {albums && pagination && currentPage < pagination.totalPages && (
+                <button
+                  type="button"
+                  onClick={() => void loadNextPage()}
+                  className="mt-2 underline underline-offset-2"
+                >
+                  Retry loading albums
+                </button>
+              )}
             </div>
+          )}
+
+          {isLoading && albums && (
+            <div className="py-4 text-center text-sm text-palette-muted" role="status">
+              Loading more albums...
+            </div>
+          )}
+
+          {albums && pagination && currentPage < pagination.totalPages && (
+            <div ref={sentinelRef} aria-hidden="true" className="h-1" />
           )}
         </div>
       </section>
@@ -396,29 +463,29 @@ const FetchForm = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="sent-albums-title"
-          className={`sent-albums-sidebar fixed inset-y-0 right-0 z-30 flex w-fit max-w-[100vw] flex-col border-l border-neutral-300 bg-white text-neutral-900 shadow-xl ${
+          className={`sent-albums-sidebar fixed inset-y-0 right-0 z-30 flex w-fit max-w-[100vw] flex-col bg-palette-raised text-palette-paper shadow-xl ${
             isSentAlbumsModalOpen ? "is-open" : ""
           }`}
         >
-            <div className="flex items-center justify-between gap-4 border-b border-neutral-200 p-6">
-              <h2 id="sent-albums-title" className="text-xl font-bold">
+            <div className="flex items-center justify-between gap-4 p-6">
+              <h2 id="sent-albums-title" className="font-serif text-xl font-bold">
                 Sent albums ({sentAlbums.length})
               </h2>
               <button
                 type="button"
                 onClick={() => setIsSentAlbumsModalOpen(false)}
-                className="text-sm text-neutral-600 underline-offset-2 hover:underline"
+                className="text-sm text-palette-muted underline-offset-2 hover:text-palette-paper hover:underline"
               >
                 Close
               </button>
             </div>
 
-            <div className="max-w-[100vw] overflow-x-auto p-6">
+            <div className="max-w-[100vw] flex-1 overflow-x-auto bg-palette-surface p-6">
               <div className="grid w-max auto-cols-[minmax(18rem,22rem)] grid-flow-col grid-rows-6 gap-4">
                 {sentAlbums.map((sentAlbum, index) => (
                   <article
                     key={`${sentAlbum.sentAt}-${index}`}
-                    className="flex min-h-24 gap-4 border-b border-neutral-100 pb-4"
+                    className="flex min-h-24 gap-4 pb-4"
                   >
                     <img
                       src={sentAlbum.coverImage || defaultCoverImage}
@@ -427,13 +494,13 @@ const FetchForm = () => {
                       loading="lazy"
                     />
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-neutral-900">
+                      <h3 className="font-serif font-semibold text-palette-paper">
                         {sentAlbum.title}
                       </h3>
-                      <p className="text-sm text-neutral-700">
+                      <p className="text-sm text-palette-muted">
                         {sentAlbum.artist} ({sentAlbum.year})
                       </p>
-                      <p className="mt-1 text-sm text-neutral-500">
+                      <p className="mt-1 text-sm text-palette-muted">
                         {sentAlbum.genre.join(", ") || "Unknown Genre"}
                       </p>
                     </div>
@@ -442,14 +509,14 @@ const FetchForm = () => {
               </div>
             </div>
 
-            <div className="flex justify-end border-t border-neutral-200 p-6">
+            <div className="flex justify-end p-6">
               <button
                 type="button"
                 onClick={() => {
                   setSentAlbums([]);
                   setIsSentAlbumsModalOpen(false);
                 }}
-                className="text-sm text-neutral-600 underline-offset-2 hover:underline"
+                className="text-sm text-palette-muted underline-offset-2 hover:text-palette-paper hover:underline"
               >
                 Clear history
               </button>

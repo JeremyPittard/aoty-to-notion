@@ -126,7 +126,14 @@ export const POST: APIRoute = async ({ request }) => {
         // Parse Discogs results
         if (data.results && Array.isArray(data.results)) {
           discogsResults = data.results;
-          discogsPagination = data.pagination;
+          if (data.pagination) {
+            discogsPagination = {
+              page: data.pagination.page,
+              perPage: data.pagination.per_page,
+              totalPages: data.pagination.pages,
+              totalItems: data.pagination.items,
+            };
+          }
         }
 
         // Parse Last.fm results
@@ -157,8 +164,15 @@ export const POST: APIRoute = async ({ request }) => {
       }
     });
 
-    // Choose primary pagination - prioritize Last.fm if available
-    const pagination = lastfmPagination || discogsPagination;
+    const sourcePagination = [lastfmPagination, discogsPagination].filter(Boolean);
+    const pagination = sourcePagination.length
+      ? {
+          page,
+          perPage,
+          totalPages: Math.max(...sourcePagination.map((info) => info.totalPages)),
+          totalItems: sourcePagination.reduce((total, info) => total + info.totalItems, 0),
+        }
+      : undefined;
 
     console.log(
       "Processed results - Discogs:",

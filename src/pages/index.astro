@@ -4,8 +4,8 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Album of the year fetcherer">
-  <main>
-    <h1 class="mx-auto text-4xl font-semibold text-center mt-16 mb-8">
+  <main class="mx-auto min-h-screen max-w-4xl px-4 pb-16">
+    <h1 class="mx-auto mt-16 mb-8 max-w-4xl border-b border-palette-line pb-6 text-center font-serif text-4xl font-medium text-palette-paper">
       Album Fetchererer
     </h1>
     <FetchForm client:only="react" />
@@ -20,5 +20,10 @@ import Layout from "../layouts/Layout.astro";
       text-overflow: ellipsis;
       overflow: hidden;
     }
+  }
+
+  ::selection {
+    background: var(--palette-paper);
+    color: var(--palette-ink);
   }
 </style>

@@ -1,0 +1,37 @@
+/* Tailwind handles element defaults; app-specific link interaction lives here. */
+
+:root {
+  --color-text: var(--palette-paper);
+  --color-background: var(--palette-ink);
+}
+
+.send-custom-link {
+  position: relative;
+  text-decoration: underline;
+  z-index: 0;
+  transition: color 100ms linear 150ms;
+}
+
+.send-custom-link::after {
+  content: " ";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  height: 100%;
+  width: calc(100% + 8px);
+  background-color: var(--color-text);
+  transform-origin: bottom;
+  scale: 1 0;
+  transition: scale 100ms ease;
+  z-index: -1;
+  padding-inline: 4px;
+}
+
+.send-custom-link:hover {
+  color: var(--color-background);
+  text-decoration: none;
+}
+
+.send-custom-link:hover::after {
+  scale: 1 1;
+}

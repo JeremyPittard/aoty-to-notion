@@ -3,6 +3,8 @@ interface Props {
   title: string;
 }
 
+import "../styles/index.css";
+
 const { title } = Astro.props;
 ---
 
@@ -19,3 +21,65 @@ const { title } = Astro.props;
     <slot />
   </body>
 </html>
+<style is:global>
+  :root {
+    color-scheme: dark;
+    --palette-ink: #171318;
+    --palette-surface: #242226;
+    --palette-raised: #302d31;
+    --palette-paper: #fffaf2;
+    --palette-muted: #b8b3ad;
+    --palette-line: #575459;
+    --palette-highlight: #e8dccb;
+    --palette-gray: #5d5d5f;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--palette-ink);
+    color: var(--palette-paper);
+  }
+
+  input,
+  select,
+  textarea {
+    border-color: var(--palette-line);
+    background-color: var(--palette-surface);
+    color: var(--palette-paper);
+  }
+
+  input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    appearance: auto;
+    accent-color: var(--palette-paper);
+    background-color: var(--palette-surface);
+  }
+
+  dialog.app-modal {
+    background-color: var(--palette-raised);
+    color: var(--palette-paper);
+    opacity: 1;
+    box-shadow: 0 24px 64px rgb(0 0 0 / 55%);
+  }
+
+  .app-modal-panel {
+    background-color: var(--palette-raised);
+    color: var(--palette-paper);
+    opacity: 1;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--palette-muted);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    --tw-ring-color: var(--palette-paper);
+    border-color: var(--palette-paper);
+  }
+</style>
